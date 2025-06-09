@@ -165,6 +165,7 @@ class PerceptionAgent:
                     user_message=self.generate_detection_func_prompt(), 
                     functional_calls_info=self.func_agent.detection_func_infos,
                     model_name=self.model_name,
+                    backend=self.backend,
                 )
 
                 if self.verbose:
@@ -196,7 +197,7 @@ class PerceptionAgent:
             full_messages=full_messages, 
             system_message=None, 
             user_message=prediction_prompt, 
-            model_name=self.model_name,,
+            model_name=self.model_name,
             backend=self.backend,
         )
 

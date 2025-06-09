@@ -14,7 +14,7 @@ from agentdriver.perception.perception_prompts import (
 )
 
 class PerceptionAgent:
-    def __init__(self, token, split, data_path, model_name = "gpt-3.5-turbo-0613", verbose=True) -> None:
+    def __init__(self, token, split, data_path, model_name = "gpt-3.5-turbo-0613", verbose=True, backend="openai") -> None:
         self.token = token
         folder_name = Path("val") if "val" in split else Path("train")
         self.file_name = data_path / folder_name / Path(f"{self.token}.pkl")
@@ -23,6 +23,7 @@ class PerceptionAgent:
         self.func_agent = FuncAgent(self.data_dict)
         self.model_name = model_name
         self.verbose = verbose
+        self.backend = backend
 
         self.num_call_detection_times = 1
         self.num_call_prediction_times = 1
@@ -149,7 +150,8 @@ class PerceptionAgent:
             full_messages=full_messages, 
             system_message=system_message, 
             user_message=detection_prompt,
-            model_name=self.model_name,
+            model_name=self.model_name,,
+            backend=self.backend,
         )
 
         if self.verbose:
@@ -194,7 +196,8 @@ class PerceptionAgent:
             full_messages=full_messages, 
             system_message=None, 
             user_message=prediction_prompt, 
-            model_name=self.model_name,
+            model_name=self.model_name,,
+            backend=self.backend,
         )
 
         if self.verbose:
@@ -208,6 +211,7 @@ class PerceptionAgent:
                     user_message=self.generate_prediction_func_prompt(), 
                     functional_calls_info=self.func_agent.prediction_func_infos,
                     model_name=self.model_name,
+                    backend=self.backend,
                 )
 
                 if self.verbose:
@@ -240,6 +244,7 @@ class PerceptionAgent:
             system_message=None, 
             user_message=occupancy_prompt,
             model_name=self.model_name,
+            backend=self.backend,
         )
 
         if self.verbose:
@@ -253,6 +258,7 @@ class PerceptionAgent:
                     user_message=self.generate_occupancy_func_prompt(), 
                     functional_calls_info=self.func_agent.occupancy_func_infos,
                     model_name=self.model_name,
+                    backend=self.backend,
                 )
 
                 if self.verbose:
@@ -285,6 +291,7 @@ class PerceptionAgent:
             system_message=None, 
             user_message=map_prompt, 
             model_name=self.model_name,
+            backend=self.backend,
         )
 
         if self.verbose:
@@ -298,6 +305,7 @@ class PerceptionAgent:
                     user_message=self.generate_map_func_prompt(), 
                     functional_calls_info=self.func_agent.map_func_infos,
                     model_name=self.model_name,
+                    backend=self.backend,
                 )
 
                 if self.verbose:
@@ -345,7 +353,7 @@ class PerceptionAgent:
         working_memory.update({"ego_prompts": ego_prompts})
         return perception_prompts, working_memory
 
-    @timeout(15)
+    @timeout(60)
     def run(self):
         ego_prompts, ego_data = self.func_agent.get_ego_states()
         full_messages, func_responses = self.get_perception_results(ego_prompts)

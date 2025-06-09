@@ -150,7 +150,7 @@ class PerceptionAgent:
             full_messages=full_messages, 
             system_message=system_message, 
             user_message=detection_prompt,
-            model_name=self.model_name,,
+            model_name=self.model_name,
             backend=self.backend,
         )
 

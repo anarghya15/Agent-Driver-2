@@ -25,7 +25,7 @@ from agentdriver.functional_tools.prediction import (
 
 class ExperienceMemory:
     r"""Memory of Past Driving Experiences."""
-    def __init__(self, data_path, model_name = "gpt-3.5-turbo-0613", verbose=False, compare_perception=False) -> None:
+    def __init__(self, data_path, model_name = "gpt-3.5-turbo-0613", verbose=False, compare_perception=False, backend="openai") -> None:
         self.data_path = data_path / Path("memory") / Path("database.pkl")
         self.num_keys = 3
         self.keys = []
@@ -37,6 +37,7 @@ class ExperienceMemory:
         self.model_name = model_name
         self.verbose = verbose
         self.compare_perception = compare_perception
+        self.backend=backend
 
     def gen_vector_keys(self, data_dict):
         vx = data_dict['ego_states'][0]*0.5
@@ -76,7 +77,20 @@ class ExperienceMemory:
     def compute_similarity(self, queries, token):
         """Compute the similarity between the current experience and the past experiences in the memory."""        
         diffs = []
-        for query, key, key_coef in zip(queries, self.keys, self.key_coefs):
+        for i, (query, key, key_coef) in enumerate(zip(queries, self.keys, self.key_coefs)):
+            query_shape = query.shape[0]
+            key_shape = key.shape[1]
+         
+            if query_shape < key_shape:
+                # Pad query with zeros if it's shorter
+                padding = np.zeros(key_shape - query_shape)
+                query = np.concatenate([query, padding])
+                queries[i] = query  # Update query in list
+                # print(f"[DEBUG] Auto-padded query[{i}] from shape {query_shape} to {key_shape}")
+            
+            elif query_shape > key_shape:
+                raise ValueError(f"Query[{i}] is longer than expected: {query.shape} vs key[{i}]: {key.shape}")
+                
             squared_diffs = np.sum((query - key)**2, axis=1)
             diffs.append(squared_diffs * key_coef)
         diffs = sum(diffs)
@@ -148,6 +162,7 @@ class ExperienceMemory:
             system_message=mem_system_message,
             user_message=mem_prompts,
             model_name=self.model_name,
+            backend=self.backend
         )
  
         if self.verbose:
